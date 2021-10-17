@@ -18,7 +18,7 @@ export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
 
 ## Remove  "ingress_vip": "10.0.0.8",  parameter if Single Node Openshift
 
-cat << EOF > ./create-cluster-ai-api/deployment-multinodes.json
+cat << EOF > ./3-deployment-openshift-ha.json
 {
   "kind": "Cluster",
   "name": "openshift-ha",
@@ -59,7 +59,7 @@ EOF
 
 ## Use deployment-multinodes.json to register the new cluster
 content=$(curl -s -X POST "$AI_URL/api/assisted-install/v1/clusters" \
-   -d @./create-cluster-ai-api/deployment-multinodes.json --header "Content-Type: application/json")
+   -d @./3-deployment-openshift-ha.json --header "Content-Type: application/json")
 CLUSTER_ID=$( jq .id <<< "${content}" | sed 's/"//g')
 
 ## Check cluster is registered Once the cluster definition has been sent to an the API we should be able to retrieve its unique id
@@ -78,7 +78,7 @@ curl -s -X GET "$AI_URL/api/assisted-install/v2/clusters?with_hosts=true" -H "ac
 ## Build the discovery boot ISO
 ## The discovery boot ISO is a live CoreOS image that the nodes will boot from. Once booted an introspection will be performed by the discovery agent and data sent to the assisted service. If the node passes the validation tests its status_info will be "Host is ready to be installed". We need some extra parameters to be injected into the ISO . To do so, we create a data file as described bellow:
 
-cat << EOF > ./create-cluster-ai-api/discovery-iso-params.json
+cat << EOF > ./3-discovery-iso-params.json
 {
   "ssh_public_key": "$CLUSTER_SSHKEY",
   "pull_secret": $PULL_SECRET,
@@ -89,7 +89,7 @@ EOF
 ## ISO is now ready to be built! Let's make the API call! As you can see we use the data file so pull-secret and ssh public key are injected into the live ISO.
 echo Building ISO
 curl -s -X POST "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/image" \
-   -d @./create-cluster-ai-api/discovery-iso-params.json \
+   -d @./3-discovery-iso-params.json \
    --header "Content-Type: application/json" | jq '.'
 
 ## Downloading ISO
