@@ -12,15 +12,15 @@ provider "libvirt" {
 resource "libvirt_pool" "images" {
   name = "images"
   type = "dir"
-  path = "/var/lib/libvirt/images"
+  path = "/home/libvirt/images"
 }
 resource "libvirt_network" "ocp_network" {
-  name = "ocp4-net"
+  name = "openshift-net"
   mode = "nat"
   autostart = true
-  domain = "lab.local"
-  addresses = ["192.167.124.0/24"]
-  bridge = "virbr-ocp4"
+  domain = "colbert.def"
+  addresses = ["10.0.40.0/16"]
+  bridge = "virbr-openshift"
   dhcp {
         enabled = false
         }
