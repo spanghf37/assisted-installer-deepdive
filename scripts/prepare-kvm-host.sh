@@ -18,5 +18,7 @@ sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 setenforce 0
 ###create kvm pool and network###
 
+cp -r ../terraform /opt/
+
 terraform -chdir=/opt/terraform/pool-net init
 terraform -chdir=/opt/terraform/pool-net apply -auto-approve
