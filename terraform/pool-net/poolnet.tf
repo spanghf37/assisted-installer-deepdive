@@ -7,7 +7,7 @@ terraform {
 }
 # instance the provider
 provider "libvirt" {
-   uri = "qemu:///system"
+   uri = "qemu+ssh://root@10.0.30.10/system"
 }
 resource "libvirt_pool" "images" {
   name = "images"
