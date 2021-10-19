@@ -1,12 +1,14 @@
 #!/bin/bash
+RESOURCES_DIR=/opt/assisted-installer-resources
 TERRAVERSION=1.0.7 ####change me if needed
-dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+dnf -y install $RESOURCES_DIR/epel-release-latest-8.noarch.rpm
 dnf install -y libvirt libvirt-devel qemu-kvm mkisofs python3-devel jq ipmitool  git make bash-completion \
   net-tools  wget syslinux libvirt-libs tmux  \
   tar unzip go ipmitool virt-install libguestfs libguestfs-tools libguestfs-xfs net-tools  virt-what nmap
 dnf group install "Development Tools" -y
 systemctl enable --now libvirtd
-wget https://releases.hashicorp.com/terraform/${TERRAVERSION}/terraform_${TERRAVERSION}_linux_amd64.zip
+wget $RESOURCES_DIR/terraform_${TERRAVERSION}_linux_amd64.zip
 unzip terraform_${TERRAVERSION}_linux_amd64.zip
 mv terraform /usr/local/sbin/
 rm -f *zip
