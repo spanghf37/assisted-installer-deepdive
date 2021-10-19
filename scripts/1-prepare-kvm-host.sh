@@ -23,6 +23,7 @@ setenforce 0
 
 ssh-keygen
 ssh-copy-id $LIBVIRT_HOST_USERNAME@$LIBVIRT_HOST_URL
+ssh-keyscan 10.0.30.10 >> /root/.ssh/known_hosts
 
 cp -r ../terraform /opt/
 
