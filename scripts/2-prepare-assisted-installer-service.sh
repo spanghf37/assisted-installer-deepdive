@@ -2,12 +2,14 @@
 
 #!/bin/bash
 
+RESOURCES_DIR=/opt/assisted-service-resources
+
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 setenforce 0
 dnf install -y @container-tools
 dnf group install "Development Tools" -y
 dnf -y install python3-pip socat make tmux git jq crun
-cd assisted-service
+cd $RESOURCES_DIR/assisted-service
 
 ## Change HOST IP
 IP="${host_fqdn}"
