@@ -1,5 +1,5 @@
 #!/bin/bash
-RESOURCES_DIR=/opt/assisted-installer-resources
+RESOURCES_DIR=/opt/assisted-service-resources
 TERRAVERSION=1.0.7 ####change me if needed
 LIBVIRT_HOST_USERNAME=root
 LIBVIRT_HOST_URL=10.0.30.10
