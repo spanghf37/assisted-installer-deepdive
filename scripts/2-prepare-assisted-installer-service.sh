@@ -2,20 +2,15 @@
 
 #!/bin/bash
 
-## Create SSHKEY for host
-ssh-keygen -t ed25519
-
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 setenforce 0
 dnf install -y @container-tools
 dnf group install "Development Tools" -y
 dnf -y install python3-pip socat make tmux git jq crun
-cd /root
-git clone https://github.com/openshift/assisted-service
 cd assisted-service
 
 ## Change HOST IP
-IP=10.0.0.1
+IP="${host_fqdn}"
 
 AI_URL=http://$IP:8090
 
