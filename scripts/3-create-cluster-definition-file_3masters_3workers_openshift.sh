@@ -108,3 +108,7 @@ echo Downloading ISO
 curl \
   -L "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/image" \
   -o $RESOURCES_DIR/discovery_image_openshift-ha.iso
+
+## Copy to LIBVIRT HOST
+scp -r -p $RESOURCES_DIR/discovery_image_openshift-ha.iso root@10.0.30.10:/home/libvirt/images
+
