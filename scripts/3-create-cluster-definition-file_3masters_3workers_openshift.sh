@@ -17,7 +17,7 @@ AI_URL=$IP:8090
 PULL_SECRET_UPDATE=/home/pull-secret-update.txt
 
 #Minify JSON Pull secret:
-jq -c < $PULL_SECRET_UPDATE > $PULL_SECRET_UPDATE
+(jq -c < $PULL_SECRET_UPDATE) > $PULL_SECRET_UPDATE
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
 export PULL_SECRET=$(cat $PULL_SECRET_UPDATE | jq -R .)
