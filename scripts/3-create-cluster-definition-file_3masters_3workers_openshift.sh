@@ -14,6 +14,7 @@
 host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=$IP:8090
+PULL_SECRET_UPDATE=/home/pull-secret-update.txt
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
 export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
