@@ -11,6 +11,7 @@
 #!/bin/bash
 
 ## Change HOST AI IP
+host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=$IP:8090
 
