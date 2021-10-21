@@ -73,7 +73,7 @@ resource "libvirt_domain" "workers" {
       dev = ["hd","cdrom"]
     }
   network_interface {
-    network_name = "openshift-net"
+    bridge = "baremetal"
     mac = "AA:BB:CC:11:42:2${count.index}"
   }
   console {
