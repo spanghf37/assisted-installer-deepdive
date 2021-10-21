@@ -15,10 +15,11 @@ host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=$IP:8090
 
-echo $AI_URL
-
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
 export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
+
+echo $PULL_SECRET
+echo CLUSTER_SSHKEY
 
 ## Remove  "ingress_vip": "10.0.0.8",  parameter if Single Node Openshift
 
