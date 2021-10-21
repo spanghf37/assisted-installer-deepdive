@@ -17,7 +17,7 @@ AI_URL=$IP:8090
 PULL_SECRET_UPDATE=/home/pull-secret-update.txt
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
-export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
+export PULL_SECRET=$(cat $PULL_SECRET_UPDATE | jq -R .)
 
 echo $PULL_SECRET
 echo $CLUSTER_SSHKEY
