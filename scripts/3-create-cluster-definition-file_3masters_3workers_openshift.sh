@@ -16,6 +16,7 @@ IP="${host_fqdn}"
 AI_URL=$IP:8090
 PULL_SECRET_UPDATE=/home/pull-secret-update.txt
 PULL_SECRET_UPDATE_MINIFY=/home/pull-secret-update-minify.txt
+RESOURCES_DIR=/opt/assisted-service-resources
 
 #Minify JSON Pull secret:
 jq -c < $PULL_SECRET_UPDATE > $PULL_SECRET_UPDATE_MINIFY
@@ -106,4 +107,4 @@ curl -s -X POST "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/
 echo Downloading ISO
 curl \
   -L "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/image" \
-  -o /home/libvirt/images/discovery_image_openshift-ha.iso
+  -o $RESOURCES_DIR=/opt/assisted-service-resources/discovery_image_openshift-ha.iso
