@@ -107,4 +107,4 @@ curl -s -X POST "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/
 echo Downloading ISO
 curl \
   -L "$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/downloads/image" \
-  -o $RESOURCES_DIR=/opt/assisted-service-resources/discovery_image_openshift-ha.iso
+  -o $RESOURCES_DIR/discovery_image_openshift-ha.iso
