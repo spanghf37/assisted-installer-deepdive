@@ -14,7 +14,7 @@
 IP="${host_fqdn}"
 AI_URL=$IP:8090
 
-export CLUSTER_SSHKEY=$(cat ~/.ssh/id_ed25519.pub)
+export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
 export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
 
 ## Remove  "ingress_vip": "10.0.0.8",  parameter if Single Node Openshift
