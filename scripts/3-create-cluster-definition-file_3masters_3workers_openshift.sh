@@ -15,9 +15,10 @@ host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=$IP:8090
 PULL_SECRET_UPDATE=/home/pull-secret-update.txt
+PULL_SECRET_UPDATE_MINIFY=/home/pull-secret-update-minify.txt
 
 #Minify JSON Pull secret:
-(jq -c < $PULL_SECRET_UPDATE) > $PULL_SECRET_UPDATE
+jq -c < $PULL_SECRET_UPDATE > $PULL_SECRET_UPDATE_MINIFY
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
 export PULL_SECRET=$(cat $PULL_SECRET_UPDATE | jq -R .)
