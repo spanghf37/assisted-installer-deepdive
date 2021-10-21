@@ -6,7 +6,7 @@ terraform {
   }
 }
 provider "libvirt" {
-  uri = "qemu:///system"
+   uri = "qemu+ssh://root@10.0.30.10/system"
 }
 # resource "libvirt_network" "ocp_network" {
 #   name = "ocp4-net"
@@ -187,7 +187,7 @@ resource "libvirt_domain" "masters" {
       dev = ["hd","cdrom"]
     }
   network_interface {
-    network_name = "openshift-net"
+    network_name = "baremetal"
     mac = "AA:BB:CC:11:42:1${count.index}"
   }
   console {
