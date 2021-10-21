@@ -187,7 +187,7 @@ resource "libvirt_domain" "masters" {
       dev = ["hd","cdrom"]
     }
   network_interface {
-    network_name = "baremetal"
+    bridge = "baremetal"
     mac = "AA:BB:CC:11:42:1${count.index}"
   }
   console {
