@@ -21,7 +21,7 @@ PULL_SECRET_UPDATE_MINIFY=/home/pull-secret-update-minify.txt
 jq -c < $PULL_SECRET_UPDATE > $PULL_SECRET_UPDATE_MINIFY
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_rsa.pub)
-export PULL_SECRET=$(cat $PULL_SECRET_UPDATE | jq -R .)
+export PULL_SECRET=$(cat $PULL_SECRET_UPDATE_MINIFY | jq -R .)
 
 echo $PULL_SECRET
 echo $CLUSTER_SSHKEY
