@@ -16,7 +16,7 @@ dnf -y install python3-pip socat make tmux git jq crun
 cd $RESOURCES_DIR/assisted-service
 
 ## Change HOST IP
-host_fqdn=$( hostname --long 
+host_fqdn=$( hostname --long)
 IP="${host_fqdn}"
 
 AI_URL=http://$IP:8090
