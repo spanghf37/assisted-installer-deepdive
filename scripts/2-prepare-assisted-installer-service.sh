@@ -4,6 +4,10 @@
 
 RESOURCES_DIR=/opt/assisted-service-resources
 
+##Cleaning
+podman pod stop assisted-installer
+podman pod rm assisted-installer
+
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 setenforce 0
 dnf install -y @container-tools
