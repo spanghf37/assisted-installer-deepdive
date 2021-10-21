@@ -11,7 +11,8 @@
 #!/bin/bash
 
 ## Change HOST AI IP
-AI_URL='http://10.0.0.1:8090'
+IP="${host_fqdn}"
+AI_URL=$IP:8090
 
 export CLUSTER_SSHKEY=$(cat ~/.ssh/id_ed25519.pub)
 export PULL_SECRET=$(cat pull-secret.txt | jq -R .)
@@ -23,7 +24,7 @@ cat << EOF > ./3-deployment-openshift-ha.json
   "kind": "Cluster",
   "name": "openshift-ha",
   "openshift_version": "4.8",
-  "ocp_release_image": "quay.io/openshift-release-dev/ocp-release:4.8.12-x86_64",
+  "ocp_release_image": "openshift-assisted-service.colbert.def:5015/openshift-release-dev/ocp-release:4.8.13-x86_64",
   "base_dns_domain": "colbert.def",
   "hyperthreading": "all",
   "ingress_vip": "10.0.0.8",
