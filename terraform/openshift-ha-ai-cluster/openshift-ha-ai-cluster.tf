@@ -104,7 +104,7 @@ resource "libvirt_domain" "workers" {
     volume_id = "${element(libvirt_volume.volume-osd2-workers.*.id, count.index)}"
   }
   graphics {
-    type        = "spice"
+    type        = "vnc"
     listen_type = "address"
     autoport    = true
   }
@@ -177,8 +177,8 @@ resource "libvirt_volume" "fatdisk-masters" {
 
 resource "libvirt_domain" "masters" {
   name   = "${element(var.master, count.index)}"
-  memory = "32000"
-  vcpu   = 12
+  memory = "16384"
+  vcpu   = 4
   cpu  {
   mode = "host-passthrough"
   }
@@ -209,7 +209,7 @@ resource "libvirt_domain" "masters" {
       file = "/home/libvirt/images/discovery_image_openshift-ha.iso"
     }
   graphics {
-    type        = "spice"
+    type        = "vnc"
     listen_type = "address"
     autoport    = true
   }
