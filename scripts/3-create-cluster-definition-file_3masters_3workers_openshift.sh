@@ -100,7 +100,7 @@ EOF
 ## Update ignition file to pull from local registry
 IGNITION_UPDATED=$(curl --fail -s http://$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/discovery-ignition | sed 's,ExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,ExecStartPre=podman pull --tls-verify=false '"$IP"':5015/ocpmetal/assisted-installer-agent:latest\\\\nExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,')
 echo $IGNITION_UPDATED
-curl --location --request PATCH http://$IP:8090/api/assisted-install/v1/clusters/89ce3c6d-b7a9-402a-b123-c9e7bc745a57/discovery-ignition --header "Content-Type: application/json" --data-raw "$(echo $IGNITION_UPDATED)"
+curl --location --request PATCH http://$IP:8090/api/assisted-install/v1/clusters/$CLUSTER_ID/discovery-ignition --header "Content-Type: application/json" --data-raw "$(echo $IGNITION_UPDATED)"
 
 
 ## ISO is now ready to be built! Let's make the API call! As you can see we use the data file so pull-secret and ssh public key are injected into the live ISO.
