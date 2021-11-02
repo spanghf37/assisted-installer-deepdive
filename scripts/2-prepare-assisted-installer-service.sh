@@ -35,7 +35,7 @@ podman push $IP:5015/ocpmetal/assisted-installer-agent:latest-custom-crt --authf
 ## Update assisted-service container image (/ocpmetal/assisted-service:latest) with local registry CRT (for oc adm release extract to work)
 podman login $IP:5015 --authfile $PULL_SECRET_UPDATE
 cat <<EOT > $RESOURCES_DIR/Dockerfile-assisted-service
-FROM $IP:5015/ocpmetal/assisted-service:latest
+FROM quay.io/ocpmetal/assisted-service:latest
 ADD /registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/registry.crt
 RUN chmod 644 /etc/pki/ca-trust/source/anchors/registry.crt && update-ca-trust extract
 EOT
@@ -51,8 +51,10 @@ echo "SKIP_CERT_VERIFICATION=true" >> onprem-environment
 echo "SERVICE="$IP":5015/ocpmetal/assisted-service:latest-custom-crt" >> onprem-environment
 
 sed -i "s/5432,8000,8090,8080/5432:5432 -p 8000:8000 -p 8090:8090 -p 8080:8080/" Makefile
+
 SERVICE=$IP:5015/ocpmetal/assisted-service:latest-custom-crt
-echo $SERVICE
+
 make deploy-onprem
 podman ps
 podman pod ps
+echo $SERVICE
