@@ -48,7 +48,7 @@ sed -i "s@SERVICE_BASE_URL=.*@SERVICE_BASE_URL=$AI_URL@" onprem-environment
 sed -i 's/PUBLIC_CONTAINER_REGISTRIES=.*/PUBLIC_CONTAINER_REGISTRIES='"$IP"':5015/' onprem-environment
 echo 'AGENT_DOCKER_IMAGE='"$IP"':5015/ocpmetal/assisted-installer-agent:latest-custom-crt' >> onprem-environment
 echo "SKIP_CERT_VERIFICATION=true" >> onprem-environment
-echo "SERVICE_IMAGE="$IP":5015/ocpmetal/assisted-service:latest-custom-crt" >> onprem-environment
+echo "SERVICE="$IP":5015/ocpmetal/assisted-service:latest-custom-crt" >> onprem-environment
 
 sed -i "s/5432,8000,8090,8080/5432:5432 -p 8000:8000 -p 8090:8090 -p 8080:8080/" Makefile
 make deploy-onprem
