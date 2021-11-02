@@ -37,7 +37,7 @@ cat << EOF > ./3-deployment-openshift-ha.json
   "ocp_release_image": "openshift-assisted-service.colbert.def:5015/openshift-release-dev/ocp-release:4.8.13-x86_64",
   "base_dns_domain": "colbert.def",
   "hyperthreading": "all",
-  "ingress_vip": "10.0.0.8",
+  "ingress_vip": "10.0.40.61",
   "schedulable_masters": false,
   "high_availability_mode": "Full",
   "user_managed_networking": false,
@@ -61,7 +61,7 @@ cat << EOF > ./3-deployment-openshift-ha.json
     }
   ],
   "network_type": "OVNKubernetes",
-  "additional_ntp_source": "ntp1.hetzner.de",
+  "additional_ntp_source": "10.0.30.10",
   "vip_dhcp_allocation": false,
   "ssh_public_key": "$CLUSTER_SSHKEY",
   "pull_secret": $PULL_SECRET
