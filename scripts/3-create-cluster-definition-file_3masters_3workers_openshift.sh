@@ -37,10 +37,9 @@ cat << EOF > ./3-deployment-openshift-ha.json
   "ocp_release_image": "openshift-assisted-service.colbert.def:5015/openshift-release-dev/ocp-release:4.8.13-x86_64",
   "base_dns_domain": "colbert.def",
   "hyperthreading": "all",
-  "ingress_vip": "10.0.40.61",
   "schedulable_masters": false,
   "high_availability_mode": "Full",
-  "user_managed_networking": false,
+  "user_managed_networking": true,
   "platform": {
     "type": "baremetal"
    },
