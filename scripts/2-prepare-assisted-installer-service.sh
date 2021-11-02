@@ -51,9 +51,13 @@ echo "SKIP_CERT_VERIFICATION=true" >> onprem-environment
 echo "SERVICE="$IP":5015/ocpmetal/assisted-service:latest-custom-crt" >> onprem-environment
 
 sed -i "s/5432,8000,8090,8080/5432:5432 -p 8000:8000 -p 8090:8090 -p 8080:8080/" Makefile
+
+## Use local assisted-service:latest-custom-crt container image for Makefile
 SERVICE=$IP:5015/ocpmetal/assisted-service:latest-custom-crt
 sed -i 's;SERVICE := $(or ${SERVICE},${ASSISTED_ORG}/assisted-service:${ASSISTED_TAG});SERVICE='"$SERVICE"';' Makefile
 
+## Use local registry authfile for Makefile
+sed -i 's;podman run -dt --pod assisted-installer --env-file onprem-environment ${PODMAN_PULL_FLAG} --env DUMMY_IGNITION=$(DUMMY_IGNITION);podman run -dt --pod assisted-installer --env-file onprem-environment ${PODMAN_PULL_FLAG} --env DUMMY_IGNITION=$(DUMMY_IGNITION) --authfile '"$PULL_SECRET_UPDATE"';' Makefile
 
 make deploy-onprem
 podman ps
