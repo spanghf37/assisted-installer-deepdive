@@ -28,7 +28,7 @@ cat <<EOT > $RESOURCES_DIR/Dockerfile-assisted-installer-agent
 FROM $IP:5015/ocpmetal/assisted-installer-agent:latest
 ADD /registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/registry.crt
 RUN chmod 644 /etc/pki/ca-trust/source/anchors/registry.crt && update-ca-trust extract
-RUN echo '[[registry]]\n\
+RUN echo $'[[registry]]\n\
 prefix="quay.io/openshift-release-dev"\n\
 insecure=true\n\
 blocked=false\n\
@@ -38,8 +38,7 @@ location="$IP:5015/openshift-release-dev"\n\
 prefix="quay.io/ocmetal/assisted-installer"\n\
 insecure=true\n\
 blocked=false\n\
-location="$IP:5015/ocpmetal/assisted-installer"\n'\
-> /etc/containers/registries.conf
+location="$IP:5015/ocpmetal/assisted-installer"\n' > /etc/containers/registries.conf
 EOT
 podman build --file $RESOURCES_DIR/Dockerfile-assisted-installer-agent --authfile $PULL_SECRET_UPDATE -t $IP:5015/ocpmetal/assisted-installer-agent:latest
 podman push $IP:5015/ocpmetal/assisted-installer-agent:latest --authfile $PULL_SECRET_UPDATE
