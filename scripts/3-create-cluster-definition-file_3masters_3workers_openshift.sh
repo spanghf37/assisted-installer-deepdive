@@ -108,7 +108,7 @@ echo "TEST IGNITION UPDATED CERT 4"
 
 
 ## Update ignition file to pull from local registry
-IGNITION_UPDATED=$(curl --fail -s http://$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/discovery-ignition | sed 's,ExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,ExecStartPre=curl -O -L http://'"$IP"':8580/registry/certs/domain.crt\\\\nExecStartPre=update-ca-trust extract\\\\nExecStartPre=podman pull --tls-verify=false '"$IP"':5015/ocpmetal/assisted-installer-agent:latest\\\\nExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,')
+IGNITION_UPDATED=$(curl --fail -s http://$AI_URL/api/assisted-install/v1/clusters/$CLUSTER_ID/discovery-ignition | sed 's,ExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,ExecStartPre=curl -LOk http://'"$IP"':8580/registry/certs/domain.crt > /etc/pki/ca-trust/source/anchors/registry.crt\\\\nExecStartPre=update-ca-trust extract\\\\nExecStartPre=podman pull --tls-verify=false '"$IP"':5015/ocpmetal/assisted-installer-agent:latest\\\\nExecStartPre=/usr/local/bin/agent-fix-bz1964591 '"$IP"':5015/ocpmetal/assisted-installer-agent:latest,')
 echo $IGNITION_UPDATED
 curl --location --request PATCH http://$IP:8090/api/assisted-install/v1/clusters/$CLUSTER_ID/discovery-ignition --header "Content-Type: application/json" --data-raw "$(echo $IGNITION_UPDATED)"
 
