@@ -32,13 +32,13 @@ RUN echo '[[registry]]\n\
 prefix="quay.io/openshift-release-dev"\n\
 insecure=true\n\
 blocked=false\n\
-location="'"$IP"':5015/openshift-release-dev"\n\
+location="$IP:5015/openshift-release-dev"\n\
 \n\
 [[registry]]\n\
 prefix="quay.io/ocmetal/assisted-installer"\n\
 insecure=true\n\
 blocked=false\n\
-location="'"$IP"':5015/ocpmetal/assisted-installer"\n'\
+location="$IP:5015/ocpmetal/assisted-installer"\n'\
 > /etc/containers/registries.conf
 EOT
 podman build --file $RESOURCES_DIR/Dockerfile-assisted-installer-agent --authfile $PULL_SECRET_UPDATE -t $IP:5015/ocpmetal/assisted-installer-agent:latest
