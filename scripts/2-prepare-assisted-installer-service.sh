@@ -58,7 +58,7 @@ podman push $IP:5015/ocpmetal/assisted-service:latest-custom-crt --authfile $PUL
 ## Modify onprem-environment and Makefile to set proper URL and port forwarding
 sed -i "s@SERVICE_BASE_URL=.*@SERVICE_BASE_URL=$AI_URL@" onprem-environment
 sed -i 's/PUBLIC_CONTAINER_REGISTRIES=.*/PUBLIC_CONTAINER_REGISTRIES='"$IP"':5015/' onprem-environment
-echo 'AGENT_DOCKER_IMAGE='"$IP"':5015/ocpmetal/assisted-installer-agent:latest-custom-crt' >> onprem-environment
+echo 'AGENT_DOCKER_IMAGE='"$IP"':5015/ocpmetal/assisted-installer-agent:latest' >> onprem-environment
 echo "SKIP_CERT_VERIFICATION=true" >> onprem-environment
 echo "SERVICE="$IP":5015/ocpmetal/assisted-service:latest-custom-crt" >> onprem-environment
 
