@@ -52,7 +52,7 @@ ADD /registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/registry.crt
 RUN chmod 644 /etc/pki/ca-trust/source/anchors/registry.crt && update-ca-trust extract
 EOT
 podman build --file $RESOURCES_DIR/Dockerfile-assisted-service --authfile $PULL_SECRET_UPDATE -t $IP:5015/ocpmetal/assisted-service:latest-custom-crt
-podman push $IP:5015/ocpmetal/assisted-service:latest-custom-crt --authfile $PULL_SECRET_UPDATE
+podman push $IP:5015/ocpmetal/assisted-service:latest --authfile $PULL_SECRET_UPDATE
 
 
 ## Modify onprem-environment and Makefile to set proper URL and port forwarding
