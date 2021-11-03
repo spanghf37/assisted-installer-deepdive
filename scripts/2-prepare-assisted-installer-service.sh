@@ -40,8 +40,8 @@ insecure=true\n\
 blocked=false\n\
 location="$IP:5015/ocpmetal/assisted-installer"\n' > /etc/containers/registries.conf
 EOT
-podman build --file $RESOURCES_DIR/Dockerfile-assisted-installer-agent --authfile $PULL_SECRET_UPDATE -t $IP:5015/ocpmetal/assisted-installer-agent:latest
-podman push $IP:5015/ocpmetal/assisted-installer-agent:latest --authfile $PULL_SECRET_UPDATE
+podman build --file $RESOURCES_DIR/Dockerfile-assisted-installer-agent --authfile $PULL_SECRET_UPDATE -t $IP:5015/ocpmetal/assisted-installer-agent:latest-2
+podman push $IP:5015/ocpmetal/assisted-installer-agent:latest-2 --authfile $PULL_SECRET_UPDATE
 
 ## Update assisted-service container image (/ocpmetal/assisted-service:latest) with local registry CRT (for oc adm release extract to work)
 podman login $IP:5015 --authfile $PULL_SECRET_UPDATE
