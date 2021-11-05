@@ -39,7 +39,9 @@ cat << EOF > ./3-deployment-openshift-ha.json
   "hyperthreading": "all",
   "schedulable_masters": false,
   "high_availability_mode": "Full",
-  "user_managed_networking": true,
+  "user_managed_networking": false,
+  "api_vip": "10.0.40.60",
+  "ingress_vip": "10.0.40.61",
   "platform": {
     "type": "baremetal"
    },
