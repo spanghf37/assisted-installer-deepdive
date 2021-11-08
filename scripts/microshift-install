@@ -1,0 +1,512 @@
+Microshift
+https://microshift.io/docs/deployment-modes/quickstart-local/
+
+Fedora Server 35
+
+Il faut un hostname attribué au Fedora Server pour Microshift:
+sudo hostnamectl set-hostname microshift.colbert.def
+
+Puis redémarrer.
+
+Editer https://raw.githubusercontent.com/redhat-et/microshift/main/install.sh pour remplacer crio:1.20 par crio (le 1.20 n'est pas encore dans Fedora)
+
+Puis : bash install.sh
+
+Configurer proxy cri-o :
+
+Change /etc/sysconfig/crio
+
+cat /etc/sysconfig/crio 
+NO_PROXY="localhost,127.0.0.1,3.0.0.0/8,192.168.0.0/16,10.0.0.0/8,.ge.com"
+HTTP_PROXY="http://3.28.29.241:88/"
+HTTPS_PROXY="http://3.28.29.241:88/" 
+Then restart with systemctl restart crio 
+
+kubectl config use-context microshift
+kubectl get all -A
+
+Ouvrir ports http et https du firewall:
+firewall-cmd --zone=public --permanent --add-service=http
+firewall-cmd --zone=public --permanent --add-service=https
+firewall-cmd --reload
+
+
+Récupérer oc:
+curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz && tar xvf openshift-client-linux.tar.gz && rm -f README.md && rm -f kubectl && mv oc /usr/local/bin && oc version && rm -f openshift-client-linux.tar.gz
+
+Déployer console OKD:
+kubectl create serviceaccount console -n kube-system
+kubectl create clusterrolebinding console --clusterrole=cluster-admin --serviceaccount=kube-system:console -n kube-system
+
+Puis : kubectl get secrets -n kube-system
+et récupérer le nom du token du service account de la console (ex. : console-token-x1ze1)
+
+Puis modifier dans le YAML de déploiement de la console le nom du token :
+
+
+cat <<EOF | kubectl create -f -
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console-deployment
+  namespace: kube-system
+  labels:
+    app: console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: console
+  template:
+    metadata:
+      labels:
+        app: console
+    spec:
+      containers:
+        - name: console-app
+          image: quay.io/openshift/origin-console:latest
+          ports:
+            - containerPort: 9000
+          env:
+            - name: BRIDGE_USER_AUTH
+              value: disabled # no authentication required
+            - name: BRIDGE_K8S_MODE
+              value: off-cluster
+            - name: BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT
+              value: https://kubernetes.default #master api
+            - name: BRIDGE_K8S_MODE_OFF_CLUSTER_SKIP_VERIFY_TLS
+              value: "true" # no tls enabled
+            - name: BRIDGE_K8S_AUTH
+              value: bearer-token
+            - name: BRIDGE_K8S_AUTH_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: console-token-clqfd # console serviceaccount token
+                  key: token
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: console-ci-service
+  namespace: kube-system
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9000
+  selector:
+    app: console
+  type: ClusterIP
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: console
+  namespace: kube-system
+spec:
+  host: console.openshift-assisted-service.colbert.def
+  to:
+    kind: Service
+    name: console-ci-service
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
+---
+EOF
+
+
+Editer /etc/containers/policy.json pour :
+{
+    "default": [
+        {
+            "type": "insecureAcceptAnything"
+        }
+    ],
+    "transports": {
+        "docker-daemon": {
+            "": [
+                {
+                    "type": "insecureAcceptAnything"
+                }
+            ]
+        }
+    }
+}
+
+Télécharger pull-secret de Red Hat dans "config.json" (faire Télécharger le .txt, puis l'ouvrir et copier/coller dans VI):
+https://console.redhat.com/openshift/downloads
+
+Editer /etc/crio/crio.conf et préciser le global pull-secret:
+global_auth_file = "/root/microshift/config.json"
+
+Puis : systemctl restart crio
+
+
+Déployer OLM :
+curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.19.1/install.sh | bash -s v0.19.1
+
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: assisted-installer
+  labels:
+    name: assisted-installer
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: hive-operator
+  namespace: operators
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: hive-operator
+  source: operatorhubio-catalog
+  sourceNamespace: olm
+---
+EOF
+
+
+
+
+cat <<EOF | kubectl create -f -
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: community-operator-index
+  namespace: olm
+spec:
+  displayName: Red Hat Community Operators
+  image: 'registry.redhat.io/redhat/community-operator-index:v4.8'
+  publisher: Red Hat
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 60m
+---
+EOF
+
+cat <<EOF | kubectl create -f -
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: redhat-operator-index
+  namespace: olm
+spec:
+  displayName: Red Hat Operators
+  image: 'registry.redhat.io/redhat/redhat-operator-index:v4.8'
+  publisher: Red Hat
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 60m
+---
+EOF
+
+
+
+
+Assisted-service :
+
+Set default StorageClass:
+kubectl annotate storageclass/kubevirt-hostpath-provisioner storageclass.kubernetes.io/is-default-class='true'
+
+
+dnf install -y git && https://github.com/openshift/cluster-monitoring-operator.git
+
+Label sur le node pour être master (requis pour l'operator cluster-monitoring):
+
+kubectl label node/microshift.colbert.def node-role.kubernetes.io/master=''
+oc create namespace openshift-monitoring
+oc create namespace openshift-config-managed
+oc project openshift-monitoring
+oc annotate ns/openshift-monitoring openshift.io/node-selector=
+oc label ns/openshift-monitoring openshift.io/cluster-monitoring=true
+oc apply -f cluster-monitoring-operator/manifests
+
+
+
+oc create namespace openshift-machine-api
+oc project openshift-machine-api
+oc apply -f cluster-baremetal-operator/manifests
+
+Créer un CONFIGMAP default-ingress-cert dans le namespace openshift-config-managed (contenu identique au configmap "openshift-service-ca.crt")
+
+
+
+Créer manuellement le PV pour assisted-service (mettre à jour uid de la PVC, ici 4db0b1f5-ae4c-47c8-b2bc-7aca6cba3272)
+
+cat <<EOF | kubectl create -f -
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pvc-b7256415-4c18-405c-9425-d9f1a62daef6
+  annotations:
+    hostPathProvisionerIdentity: kubevirt.io/hostpath-provisioner
+    kubevirt.io/provisionOnNode: microshift.colbert.def
+    pv.kubernetes.io/provisioned-by: kubevirt.io/hostpath-provisioner
+  finalizers:
+    - kubernetes.io/pv-protection
+spec:
+  capacity:
+    storage: 20Gi
+  hostPath:
+    path: /var/hpvolumes/pvc-b7256415-4c18-405c-9425-d9f1a62daef6
+    type: ''
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    namespace: assisted-installer
+    name: assisted-service
+    uid: b7256415-4c18-405c-9425-d9f1a62daef6
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: kubevirt-hostpath-provisioner
+  volumeMode: Filesystem
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - microshift.colbert.def
+---
+EOF
+
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: assisted-service-config-custom
+  namespace: assisted-installer
+data:
+  SERVE_HTTPS: "False"
+EOF
+
+oc annotate --overwrite AgentServiceConfig agent unsupported.agent-install.openshift.io/assisted-service-configmap=assisted-service-config-custom
+
+
+
+
+
+
+cat <<EOF | kubectl create -f -
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: assisted-service-config-custom
+  namespace: assisted-installer
+data:
+  HTTPS_CERT_FILE: ''
+  ISO_WORKSPACE_BASE_DIR: /data
+  ENABLE_AUTO_ASSIGN: 'True'
+  REGISTRY_CREDS: ''
+  INSTALL_RH_CA: 'false'
+  ENABLE_KUBE_API: 'True'
+  INSTALLER_IMAGE: >-
+    quay.io/edge-infrastructure/assisted-installer@sha256:fdf0830d26687cd52fff2c7e588b1f5d00615ad9797b013e7e5162c07cbd99c7
+  JWKS_URL: 'https://api.openshift.com/.well-known/jwks.json'
+  SELF_VERSION: >-
+    quay.io/edge-infrastructure/assisted-service@sha256:711a0714ddf7129e3946021c28deb7981b4fbf26b24dd6a257ef20f6bffb6fed
+  CREATE_S3_BUCKET: 'False'
+  MUST_GATHER_IMAGES: >-
+    {"4.8":{"cnv":"registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5","lso":"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8","ocs":"registry.redhat.io/ocs4/ocs-must-gather-rhel8"}}
+  SERVICE_CA_CERT_PATH: ''
+  LOG_LEVEL: info
+  DEPLOY_TARGET: k8s
+  SERVICE_BASE_URL: 'http://assisted-service.assisted-installer.svc.cluster.local'
+  BASE_DNS_DOMAINS: ''
+  HW_VALIDATOR_REQUIREMENTS: >-
+    [{"version":"default","master":{"cpu_cores":4,"ram_mib":16384,"disk_size_gb":120,"installation_disk_speed_threshold_ms":10,"network_latency_threshold_ms":100,"packet_loss_percentage":0},"worker":{"cpu_cores":2,"ram_mib":8192,"disk_size_gb":120,"installation_disk_speed_threshold_ms":10,"network_latency_threshold_ms":1000,"packet_loss_percentage":10},"sno":{"cpu_cores":8,"ram_mib":32768,"disk_size_gb":120,"installation_disk_speed_threshold_ms":10}}]
+  PUBLIC_CONTAINER_REGISTRIES: 'quay.io,registry.svc.ci.openshift.org'
+  IMAGE_SERVICE_BASE_URL: 'https://assisted-image-service-assisted-installer.cluster.local'
+  HTTPS_KEY_FILE: ''
+  AUTH_TYPE: none
+  LOG_FORMAT: text
+  OS_IMAGES: >-
+    [{"cpu_architecture":"x86_64","openshift_version":"4.8","rootfs_url":"https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.8/4.8.14/rhcos-live-rootfs.x86_64.img","url":"https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.8/4.8.14/rhcos-4.8.14-x86_64-live.x86_64.iso","version":"48.84.202109241901-0"},{"cpu_architecture":"x86_64","openshift_version":"4.9","rootfs_url":"https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/4.9.0/rhcos-live-rootfs.x86_64.img","url":"https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/4.9.0/rhcos-4.9.0-x86_64-live.x86_64.iso","version":"49.84.202110081407-0"},{"cpu_architecture":"arm64","openshift_version":"4.9","rootfs_url":"https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/4.9/4.9.0/rhcos-4.9.0-aarch64-live-rootfs.aarch64.img","url":"https://mirror.openshift.com/pub/openshift-v4/aarch64/dependencies/rhcos/4.9/4.9.0/rhcos-4.9.0-aarch64-live.aarch64.iso","version":"49.84.202110080947-0"}]
+  S3_USE_SSL: 'false'
+  INSTALL_INVOKER: assisted-installer-operator
+  AGENT_DOCKER_IMAGE: >-
+    quay.io/edge-infrastructure/assisted-installer-agent@sha256:620ab1b00b4466c3a0f1f1b7ef3edeb6bf6fe5fa8005bd49d5d279c3b4ad8d11
+  SKIP_CERT_VERIFICATION: 'True'
+  ISO_CACHE_DIR: /data/cache
+  IPV6_SUPPORT: 'True'
+  CONTROLLER_IMAGE: >-
+    quay.io/edge-infrastructure/assisted-installer-controller@sha256:a9511b1c6adea8224732fa3440ddea6d96783778a1edb799c4f68b7844285aed
+  ISO_IMAGE_TYPE: minimal-iso
+  ENABLE_SINGLE_NODE_DNSMASQ: 'True'
+  NAMESPACE: assisted-installer
+  STORAGE: filesystem
+  SERVE_HTTPS: 'False'
+  CHECK_CLUSTER_VERSION: 'True'
+EOF
+
+
+
+cat <<EOF | kubectl create -f -
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: assisted-service-http
+  namespace: assisted-installer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: assisted-service-http
+  template:
+    metadata:
+      name: assisted-service-http
+      creationTimestamp: null
+      labels:
+        app: assisted-service-http
+      annotations:
+        agent-install.openshift.io/config-hash: 7edb7710f8100947586da6a1c0ed92828c9c97cb1916e872511ba5d84454ebcd
+        agent-install.openshift.io/mirror-hash: ''
+        agent-install.openshift.io/user-config-hash: ''
+    spec:
+      restartPolicy: Always
+      serviceAccountName: assisted-service
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      securityContext: {}
+      containers:
+        - resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8090
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          name: assisted-service
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.host
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.name
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.password
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.port
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.user
+          ports:
+            - containerPort: 8090
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: bucket-filesystem
+              mountPath: /data
+          terminationMessagePolicy: File
+          envFrom:
+            - configMapRef:
+                name: assisted-service-config-custom
+          image: >-
+            quay.io/edge-infrastructure/assisted-service@sha256:711a0714ddf7129e3946021c28deb7981b4fbf26b24dd6a257ef20f6bffb6fed
+        - resources:
+            requests:
+              cpu: 100m
+              memory: 400Mi
+          terminationMessagePath: /dev/termination-log
+          name: postgres
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.name
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.user
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: db.password
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: postgresdb
+              mountPath: /var/lib/pgsql/data
+          terminationMessagePolicy: File
+          image: >-
+            quay.io/edge-infrastructure/postgresql-12-centos7@sha256:94727d70e0afbf4e167e078744f3a10ac9d82edc553d57b0ecbb5443264f07e1
+      serviceAccount: assisted-service
+      volumes:
+        - name: bucket-filesystem
+          persistentVolumeClaim:
+            claimName: assisted-service
+        - name: postgresdb
+          persistentVolumeClaim:
+            claimName: postgres
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+EOF
+
+
+
+
+git clone https://github.com/openshift-assisted/assisted-ui.git
+
+bash deploy/deploy_config.sh  > deploy/assisted-service-ui.yaml
+
+crictl pull quay.io/ocpmetal/ocp-metal-ui:latest
