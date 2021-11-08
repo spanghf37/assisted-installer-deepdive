@@ -13,7 +13,7 @@
 ## Change HOST AI IP
 host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
-AI_URL=assisted-service-http.openshift-assisted-service.colbert.def
+AI_URL=assisted-service.openshift-assisted-service.colbert.def
 PULL_SECRET_UPDATE=/root/microshift/config.json
 PULL_SECRET_UPDATE_MINIFY=/home/pull-secret-update-minify.txt
 RESOURCES_DIR=/opt/assisted-service-resources
