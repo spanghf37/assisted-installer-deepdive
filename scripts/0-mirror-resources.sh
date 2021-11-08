@@ -5,8 +5,8 @@ RESOURCES_DIR=/opt/assisted-service-resources
 TERRAVERSION=1.0.7
 REGISTRY_USER=assisted-service
 REGISTRY_PASSWORD=assisted-service
-PULL_SECRET_REDHAT=/home/pull-secret.txt
-PULL_SECRET_UPDATE=/home/pull-secret-update.txt
+PULL_SECRET_REDHAT=/root/microshift/config.json
+PULL_SECRET_UPDATE=/root/microshift/pull-secret-update.txt
 
 ## Clean
 sudo rm -R $RESOURCES_DIR
