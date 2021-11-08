@@ -14,7 +14,7 @@
 host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=$IP:8090
-PULL_SECRET_UPDATE=/home/pull-secret-update.txt
+PULL_SECRET_UPDATE=/root/microshift/config.json
 PULL_SECRET_UPDATE_MINIFY=/home/pull-secret-update-minify.txt
 RESOURCES_DIR=/opt/assisted-service-resources
 
