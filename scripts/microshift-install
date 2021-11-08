@@ -768,3 +768,65 @@ spec:
 
 
 crictl pull quay.io/ocpmetal/ocp-metal-ui:latest
+
+
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mirror-registry-config-map
+  namespace: "assisted-installer"
+  labels:
+    app: assisted-service
+data:
+  ca-bundle.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIGMTCCBBmgAwIBAgIUP4KJvmV5fRjxBdz3DJLJ15L2mLEwDQYJKoZIhvcNAQEL
+    BQAwgYgxCzAJBgNVBAYTAkZSMQwwCgYDVQQIDANWYXIxDzANBgNVBAcMBlRvdWxv
+    bjEZMBcGA1UECgwQTWFyaW5lIE5hdGlvbmFsZTEOMAwGA1UECwwFQ1NELU0xLzAt
+    BgNVBAMMJm9wZW5zaGlmdC1hc3Npc3RlZC1zZXJ2aWNlLmNvbGJlcnQuZGVmMB4X
+    DTIxMTEwODEyNTQzMloXDTIyMTEwODEyNTQzMlowgYgxCzAJBgNVBAYTAkZSMQww
+    CgYDVQQIDANWYXIxDzANBgNVBAcMBlRvdWxvbjEZMBcGA1UECgwQTWFyaW5lIE5h
+    dGlvbmFsZTEOMAwGA1UECwwFQ1NELU0xLzAtBgNVBAMMJm9wZW5zaGlmdC1hc3Np
+    c3RlZC1zZXJ2aWNlLmNvbGJlcnQuZGVmMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
+    MIICCgKCAgEAxStM40pevvDQiB9t45btoGwnyGsjtuF4N6A6jednq//6SkwXEJ1X
+    OtoBun3YDHqNhJxQ58a3N+MCs76/MLpztB564iq1Wb2GR/22/0K3aO2AyX7T/4L2
+    KdbJOWYCAzlHGlRdOBJcIfndphc9nre8DDnGf/VGp6k+942Hj01M27wuTlGu9VLR
+    VskJ4V2whGN+1x3NSrxiNYDw6GBwMMZIXgJSZTUnnxKCFawrczctzvBRz6wMAwOD
+    H5okwxOsjRdcUIchCN7D22G+bI1+vjZJ5Jw1Hsb5FjG5b84I6dz9hnQTaTNSekrU
+    UvuoCqc/s7zK75/Kd3KCCpBrnjAvHrRfNl3VZDKRJYijpisfc931TSKXjdAlQmmD
+    Ai/7hByFhOmSwzrhuAAO0DXUK2dr0hgVm2IGDspTwBwiUv0iieb6Jzli3Gwk/PEc
+    5bYxb1uAwIFZIqJehJHtth6Zl/TlGRj32UFOyTl8FKxj6bjFtWbhPlwim0eU2AAJ
+    IosNWHAgDVH0qkYZRRJpeFik8G3Tybxc4sY4U2P1JpzyJtKiUkTHVxTySUOL8juu
+    /wvI/4w1j79XAHzPAgig5o2tfke1xto12VY5jqk2fwSRBTN0U0rSxBScp7Vq5s6g
+    tHiihnqaKu4E+Zhyq7P4VxTUZypk4z2DPP1sguPjZqDwBPHEjhWcgBUCAwEAAaOB
+    kDCBjTAdBgNVHQ4EFgQUxk/9X8k99Loh0bv2IviuJOkeHaAwHwYDVR0jBBgwFoAU
+    xk/9X8k99Loh0bv2IviuJOkeHaAwDwYDVR0TAQH/BAUwAwEB/zA6BgNVHREEMzAx
+    giZvcGVuc2hpZnQtYXNzaXN0ZWQtc2VydmljZS5jb2xiZXJ0LmRlZoIHcXVheS5p
+    bzANBgkqhkiG9w0BAQsFAAOCAgEAGOoasl6WSGIiv7PcFrzmYL3XF5iz/GmaVdwE
+    D8sYJWpXShNBuRIvKiIcvTq9aXOiwFHTWThXI80ioigqSnXLeFgPUC82JdTvfeQJ
+    4PWwt2IjoaNfpIwoXjHnOjyaOL1iFL7BSDj/5H5yXiUzS9lLrRyQ6LINeIs/eXH4
+    NnIA/1QnhaNyUIR+ACLauGfTo3LhmweVViFzq1v43B59TB9sysv/BVqNJo5lciL5
+    bkhnvV0tmEQAL7IgYPEsryT9Qh2EAYmGBKYXJ3dHG/b9hhSpbuDH0pUGsntRvv16
+    TO7t/rtluoY9Ondc1/uWb5+4LHT3LISRzjhaHEixz99HPbqGOQdoryUgLJvrd1yo
+    60MGsisWO0+hkz7Q8JWQ/ez+Fk0nLCAMvAkMSxSUin3n8Azi5arjjAS8V+NkP2Uz
+    Gj/xa8CyTcAnmLe2fSDjoJyjSaCNcAANeUQn9cFtx9nbGha460j2Jmxfehiy8Lx7
+    NzLiXs8tVZDIhbaDVD4AhO2JHm0GcKMdxk0bXcsxBdaBw98WxK/LG6DyFuVdUMTi
+    XYDLUWchj1O1Fx9wzk1COAso8/OVH4Ins2Ox5RASgGR5u4WI/JacVcfl6aTYdIgg
+    XnqwPfwYugykCHM8YJx+8iqIqnKqxMzapUf9Dm1Xuu5LOzB5T3erjmt820PqUsU/
+    1hvsNHg=
+    -----END CERTIFICATE-----
+  registries.conf: |
+    unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
+
+    [[registry]]
+       prefix = ""
+       location = "quay.io/ocpmetal"
+       mirror-by-digest-only = false
+
+       [[registry.mirror]]
+       location = "openshift-assisted-service.colbert.def:5015/ocpmetal"
+EOF
+
+
