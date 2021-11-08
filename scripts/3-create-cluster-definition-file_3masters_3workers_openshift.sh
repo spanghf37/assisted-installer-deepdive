@@ -14,7 +14,7 @@
 host_fqdn=$( hostname --long )
 IP="${host_fqdn}"
 AI_URL=assisted-service.openshift-assisted-service.colbert.def
-PULL_SECRET_UPDATE=/root/microshift/config.json
+PULL_SECRET_UPDATE=/root/microshift/pull-secret-update.txt
 PULL_SECRET_UPDATE_MINIFY=/root/microshift/pull-secret-update-minify.txt
 RESOURCES_DIR=/opt/assisted-service-resources
 
