@@ -218,7 +218,7 @@ Set default StorageClass:
 kubectl annotate storageclass/kubevirt-hostpath-provisioner storageclass.kubernetes.io/is-default-class='true'
 
 
-dnf install -y git && https://github.com/openshift/cluster-monitoring-operator.git
+dnf install -y git && git clone https://github.com/openshift/cluster-monitoring-operator.git
 
 Label sur le node pour être master (requis pour l'operator cluster-monitoring):
 
@@ -231,7 +231,7 @@ oc label ns/openshift-monitoring openshift.io/cluster-monitoring=true
 oc apply -f cluster-monitoring-operator/manifests
 
 
-
+git clone https://github.com/openshift/cluster-baremetal-operator.git
 oc create namespace openshift-machine-api
 oc project openshift-machine-api
 oc apply -f cluster-baremetal-operator/manifests
@@ -247,7 +247,7 @@ cat <<EOF | kubectl create -f -
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: pvc-b7256415-4c18-405c-9425-d9f1a62daef6
+  name: pvc-6959630f-5ac0-4a1e-ac7d-6755e45c595c
   annotations:
     hostPathProvisionerIdentity: kubevirt.io/hostpath-provisioner
     kubevirt.io/provisionOnNode: microshift.colbert.def
@@ -258,7 +258,7 @@ spec:
   capacity:
     storage: 20Gi
   hostPath:
-    path: /var/hpvolumes/pvc-b7256415-4c18-405c-9425-d9f1a62daef6
+    path: /var/hpvolumes/pvc-6959630f-5ac0-4a1e-ac7d-6755e45c595c
     type: ''
   accessModes:
     - ReadWriteOnce
@@ -266,7 +266,7 @@ spec:
     kind: PersistentVolumeClaim
     namespace: assisted-installer
     name: assisted-service
-    uid: b7256415-4c18-405c-9425-d9f1a62daef6
+    uid: 6959630f-5ac0-4a1e-ac7d-6755e45c595c
   persistentVolumeReclaimPolicy: Delete
   storageClassName: kubevirt-hostpath-provisioner
   volumeMode: Filesystem
@@ -277,22 +277,12 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - microshift.colbert.def
+                - openshift-assisted-service.colbert.def
 ---
 EOF
 
 
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: assisted-service-config-custom
-  namespace: assisted-installer
-data:
-  SERVE_HTTPS: "False"
-EOF
 
-oc annotate --overwrite AgentServiceConfig agent unsupported.agent-install.openshift.io/assisted-service-configmap=assisted-service-config-custom
 
 
 
@@ -351,7 +341,7 @@ data:
   CHECK_CLUSTER_VERSION: 'True'
 EOF
 
-
+oc annotate --overwrite AgentServiceConfig agent unsupported.agent-install.openshift.io/assisted-service-configmap=assisted-service-config-custom
 
 cat <<EOF | kubectl create -f -
 kind: Deployment
@@ -503,10 +493,278 @@ spec:
 EOF
 
 
+kind: Service
+apiVersion: v1
+metadata:
+  name: assisted-service-http
+  namespace: assisted-installer
+  labels:
+    app: assisted-service-http
+spec:
+  ports:
+    - name: assisted-service-http
+      protocol: TCP
+      port: 8090
+      targetPort: 8090
+  selector:
+    app: assisted-service-http
+  type: ClusterIP
+
+
+
+
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: assisted-service-http
+  namespace: assisted-installer
+  labels:
+    app: assisted-service-http
+spec:
+  host: assisted-service.openshift-assisted-service.colbert.def
+  to:
+    kind: Service
+    name: assisted-service-http
+    weight: 100
+  port:
+    targetPort: assisted-service-http
+
+
+
+
+kind: AgentServiceConfig
+apiVersion: agent-install.openshift.io/v1beta1
+metadata:
+  name: agent
+spec:
+  databaseStorage:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+  filesystemStorage:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 20Gi
+  mustGatherImages:
+    - name: cnv
+      openshiftVersion: '4.8'
+      url: >-
+        registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5
+    - name: ocs
+      openshiftVersion: '4.8'
+      url: registry.redhat.io/ocs4/ocs-must-gather-rhel8
+    - name: lso
+      openshiftVersion: '4.8'
+      url: registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8
+  osImages:
+    - cpuArchitecture: x86_64
+      openshiftVersion: '4.8'
+      rootFSUrl: >-
+        http://openshift-assisted-service.colbert.def:8580/rhcos-live-rootfs.x86_64.img
+      url: >-
+        http://openshift-assisted-service.colbert.def:8580/rhcos-4.8.14-x86_64-live.x86_64.iso
+      version: 48.84.202109241901-0
+
+
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: assisted-image-service-http
+  namespace: assisted-installer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: assisted-image-service-http
+  template:
+    metadata:
+      name: assisted-image-service-http
+      creationTimestamp: null
+      labels:
+        app: assisted-image-service-http
+    spec:
+      restartPolicy: Always
+      serviceAccountName: assisted-image-service
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      securityContext: {}
+      containers:
+        - resources:
+            requests:
+              cpu: 100m
+              memory: 400Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          name: assisted-image-service-http
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+            - name: LISTEN_PORT
+              value: '8080'
+            - name: RHCOS_VERSIONS
+              value: >-
+                [{"cpu_architecture":"x86_64","openshift_version":"4.8","rootfs_url":"http://openshift-assisted-service.colbert.def:8580/rhcos-live-rootfs.x86_64.img","url":"http://openshift-assisted-service.colbert.def:8580/rhcos-4.8.14-x86_64-live.x86_64.iso","version":"48.84.202109241901-0"}]
+            - name: ASSISTED_SERVICE_SCHEME
+              value: http
+            - name: ASSISTED_SERVICE_HOST
+              value: 'assisted-service-http.assisted-installer.svc:8090'
+            - name: REQUEST_AUTH_TYPE
+              value: none
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/image-service/certs
+            - name: service-cabundle
+              mountPath: /etc/image-service/ca-bundle
+          terminationMessagePolicy: File
+          image: >-
+            quay.io/edge-infrastructure/assisted-image-service@sha256:aa2ae29c78877b92cbbc69f9679d5d6abceb32fcabcbb3ff9c788ef4b01a382b
+      serviceAccount: assisted-image-service
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: assisted-image-service
+            defaultMode: 420
+        - name: service-cabundle
+          configMap:
+            name: assisted-image-service
+            defaultMode: 420
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+
+
+
+
+
+
 
 
 git clone https://github.com/openshift-assisted/assisted-ui.git
 
 bash deploy/deploy_config.sh  > deploy/assisted-service-ui.yaml
+
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: ocp-metal-ui
+  namespace: "assisted-installer"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: ocp-metal-ui
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ocp-metal-ui
+  namespace: "assisted-installer"
+data:
+  nginx.conf: |
+    server {
+      listen 8080;
+      server_name _;
+
+      root /app;
+      index index.html;
+
+      location /api {
+          proxy_pass http://assisted-service-http.assisted-installer.svc.cluster.local:8090;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+          proxy_connect_timeout 120;
+          proxy_send_timeout 120;
+          proxy_read_timeout 120;
+          send_timeout 120;
+      }
+
+      location / {
+         try_files $uri /index.html;
+      }
+    }
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ocp-metal-ui
+  namespace: "assisted-installer"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocp-metal-ui
+  template:
+    metadata:
+      labels:
+        app: ocp-metal-ui
+    spec:
+      containers:
+        - name: ocp-metal-ui
+          image: quay.io/ocpmetal/ocp-metal-ui:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /opt/bitnami/nginx/conf/server_blocks/
+              readOnly: true
+              name: nginx-conf
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: ocp-metal-ui
+            items:
+              - key: nginx.conf
+                path: default.conf
+      restartPolicy: Always
+      
+      
+      
+
 
 crictl pull quay.io/ocpmetal/ocp-metal-ui:latest
