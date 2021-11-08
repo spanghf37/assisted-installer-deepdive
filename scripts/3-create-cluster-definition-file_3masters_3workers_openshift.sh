@@ -70,7 +70,7 @@ cat << EOF > ./3-deployment-openshift-ha.json
 EOF
 
 ## Use deployment-multinodes.json to register the new cluster
-content=$(curl -s -X POST "$AI_URL/api/assisted-install/v1/clusters" \
+content=$(curl -vvv -s -X POST "$AI_URL/api/assisted-install/v1/clusters" \
    -d @./3-deployment-openshift-ha.json --header "Content-Type: application/json")
 CLUSTER_ID=$( jq .id <<< "${content}" | sed 's/"//g')
 
